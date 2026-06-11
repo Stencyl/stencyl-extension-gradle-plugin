@@ -14,8 +14,6 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion;
 import org.gradle.plugins.ide.eclipse.EclipsePlugin;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -86,7 +84,8 @@ public class StencylExtensionPlugin implements Plugin<Project> {
                     p.getDependencies().add("compileOnly", "com.stencyl:stencyl:"+targetConfig.stencylVersion);
                 }
 
-                for (String dependency : ext.getToolset().getDependencies().get()) {
+                for (String dependencyRaw : ext.getToolset().getDependencies().get()) {
+                    String dependency = StringSubstitutor.substitute(dependencyRaw);
                     if (dependency.startsWith("platform:")) {
                         p.getDependencies().add("compileOnly", dependency.substring("platform:".length()));
                     } else if (dependency.startsWith("extension:")) {
