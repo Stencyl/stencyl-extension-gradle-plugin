@@ -100,6 +100,10 @@ public class StencylExtensionPlugin implements Plugin<Project> {
                     } else if (dependency.startsWith("maven:")) {
                         String extCoords = dependency.substring("maven:".length());
                         p.getDependencies().add("implementation", extCoords);
+                    } else if (dependency.startsWith("file:")) {
+                        String relativePath = dependency.substring("file:".length());
+                        String resolvedPath = toolsetRoot.isEmpty() ? relativePath : toolsetRoot + "/" + relativePath;
+                        p.getDependencies().add("implementation", p.files(p.getLayout().getProjectDirectory().file(resolvedPath)));
                     }
                 }
 
