@@ -13,6 +13,7 @@ This Gradle plugin allows for [Stencyl](https://www.stencyl.com/) toolset extens
 pluginManagement {
     repositories {
         maven { url = "https://www.stencyl.com/dl/maven2/releases" }
+        mavenCentral()
     }
 }
 
