@@ -70,7 +70,7 @@ public class StencylExtensionPlugin implements Plugin<Project> {
                     });
                 }
 
-                p.getDependencies().add("implementation", p.getDependencies().enforcedPlatform("com.stencyl:stencyl-platform:"+targetConfig.stencylVersion));
+                p.getDependencies().add("compileOnly", p.getDependencies().enforcedPlatform("com.stencyl:stencyl-platform:"+targetConfig.stencylVersion));
                 
                 if (localDev) {
                     p.getDependencies().add("compileOnly", p.project(":"));
