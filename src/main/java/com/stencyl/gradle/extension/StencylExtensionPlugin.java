@@ -4,10 +4,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
-import org.gradle.api.tasks.Copy;
-import org.gradle.api.tasks.SourceSetContainer;
-import org.gradle.api.tasks.Sync;
-import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
@@ -16,6 +13,7 @@ import org.gradle.plugins.ide.eclipse.EclipsePlugin;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -73,9 +71,35 @@ public class StencylExtensionPlugin implements Plugin<Project> {
                 p.getDependencies().add("compileOnly", p.getDependencies().enforcedPlatform("com.stencyl:stencyl-platform:"+targetConfig.stencylVersion));
                 
                 if (localDev) {
+                    /*
+                    This is what was here before, but if it's done this way, IntelliJ includes the .jar output of
+                    the root project in the classpath, which can get in the way.
+
                     p.getDependencies().add("compileOnly", p.project(":"));
                     p.getDependencies().add("compileOnly", p.project(":stencyl-v5-core"));
                     p.getDependencies().add("compileOnly", p.project(":stencyl-v5-toolset"));
+
+                    Instead, manually wire up the source sets.
+                     */
+                    SourceSet main = javaExt.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+
+                    for (String path : List.of(":", ":stencyl-v5-core", ":stencyl-v5-toolset")) {
+                        p.getGradle().projectsEvaluated(gradle -> {
+                            Project dep = p.project(path);
+                            JavaPluginExtension depJava = dep.getExtensions().getByType(JavaPluginExtension.class);
+
+                            SourceSet depMain = depJava.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+                            main.setCompileClasspath(main.getCompileClasspath().plus(depMain.getOutput()));
+                            main.setRuntimeClasspath(main.getRuntimeClasspath().plus(depMain.getOutput()));
+                        });
+                    }
+                    p.getTasks().named("compileJava").configure(t -> {
+                        t.dependsOn(
+                                p.project(":").getTasks().named("classes"),
+                                p.project(":stencyl-v5-core").getTasks().named("classes"),
+                                p.project(":stencyl-v5-toolset").getTasks().named("classes")
+                        );
+                    });
                 } else if(stencylInstall != null) {
                     p.getDependencies().add("compileOnly", Collections.singletonMap("name", "sw"));
                     p.getDependencies().add("compileOnly", Collections.singletonMap("name", "stencyl-v5-core"));
